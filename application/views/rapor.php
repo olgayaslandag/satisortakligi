@@ -41,6 +41,7 @@ ol, ul{padding-left: 32px!important;}
 					<th>G.Toplam</th>
 					<th>Tarih</th>
 					<th>G.Tarih</th>
+					<th>Kargo</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -50,6 +51,7 @@ ol, ul{padding-left: 32px!important;}
 					<td>{{veri.komisyonlu ? veri.komisyonlu : veri.fiyat}}</td>
 					<td>{{veri.tarih}}</td>
 					<td>{{veri.update}}</td>
+					<td>{{veri.kargo_takip ? veri.kargo_takip : null}}</td>
 				</tr>
 			</tbody>
 		</table>
@@ -77,8 +79,8 @@ var app = new Vue({
 		aylarText: ["Ay Seçin", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"],
   },
 
-  created(){
-    
+  mounted(){
+
   },
 
   methods:{

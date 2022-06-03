@@ -433,6 +433,45 @@ class Home extends CI_Controller {
 
 	}
 
+	protected function getKargo($id){
+
+		if($id){
+
+			$wsdl = "https://customerservices.araskargo.com.tr/ArasCargoCustomerIntegrationService/ArasCargoIntegrationService.svc?wsdl";
+	        $user = "biancaboya";
+	        $pass = "Bianca12345.";
+	        //$code = "2121654551542";
+	        if(is_int($id)){
+	        	$code   = "1000" . $id;
+	        }else{
+	        	$x=0;
+	        	foreach($id as $i){
+	        		$id[$x] = "1000" . $i;
+	        		$x++;
+	        	}
+	        	$code = implode(",", $id);
+	        }
+
+	        try{
+	            $client = new SoapClient($wsdl);
+	            $sonuc = $client->GetQueryJSON([
+	                "loginInfo" => "<LoginInfo><UserName>biancaboya</UserName><Password>Bianca12345.</Password><CustomerCode>2121654551542</CustomerCode></LoginInfo>",
+	    	        "queryInfo" => "<QueryInfo><QueryType>39</QueryType><IntegrationCode>".$code."</IntegrationCode></QueryInfo>",
+	            ]);
+	            $sonuc = $sonuc->GetQueryJSONResult;
+	            //echo json_encode($sonuc);
+	            
+	            
+	            // QueryResult->Collection->KARGO_TAKIP_NO
+	            return $sonuc;
+	        } catch(Exception $a){
+	            return json_encode($a);
+	        }
+
+		}
+
+	}
+
 	public function rapor($durum=null, $yil=null, $ay=null){
 
 		$yil = $yil ? $yil : date("Y");
@@ -450,6 +489,7 @@ class Home extends CI_Controller {
 		$orders = $this->Order_Model->allOrdersByOrders($orderRequest);
 
 		$data = [];
+		$ids = [];
 		foreach($orders as $order){
 			
 			$price = $this->Order_Model->getOrderMeta(["post_id" => $order->ID, "meta_key" => "_order_total"]);
@@ -458,22 +498,66 @@ class Home extends CI_Controller {
 
 			$komisyonlu = $this->Order_Model->getMiraOrderPrice(["mira_order_order" => $order->ID]);
 			$komisyonlu = $komisyonlu ? $komisyonlu[0]->mira_order_price : 0;
-			
+
+			$ids[] = intval($order->ID);
+
 			$data[] = [
 				"siparis_no" => $order->ID,
 				"fiyat" => $price,
 				"komisyonlu" => $komisyonlu,
-				"tarih" => $order->post_date,
-				"update"=> $order->post_modified,
+				"tarih" => date("d-m-Y", strtotime($order->post_date)),
+				"update"=> date("d-m-Y", strtotime($order->post_modified)),
 			];
 		}
+
+
+		$reqIds = array_chunk($ids, 25);
+		$kargos = [];
+		foreach($reqIds as $reqs){
+
+			$aras = json_decode($this->getKargo($reqs));
+			$v[] = $aras;
+			if(isset($aras->QueryResult->Collection)){
+				foreach($aras->QueryResult->Collection as $c){
+					$kargoTakip = isset($c->KARGO_TAKIP_NO) ? $c->KARGO_TAKIP_NO : null;
+					$mkod = isset($c->MUSTERI_OZEL_KODU) ? $c->MUSTERI_OZEL_KODU : null;
+
+
+					$kargos[] = (Object)[
+						"takip" => $kargoTakip,
+						"mkod" => ltrim($mkod, "1000"),
+						"mkodOrj" => $mkod
+					];
+				}
+			}
+		}
+
+
+
+		foreach($kargos as $k){
+			
+			$x=0;
+			foreach($data as $d){
+				if("1000".$d["siparis_no"] == $k->mkodOrj){
+					$data[$x]["kargo_takip"] = $k->takip;
+				}
+				$x++;
+			}
+
+		}
+		//echo json_encode($data); exit;
+
 		$this->load->view("rapor", [
 			"yil" => $yil,
 			"ay" 	=> $ay,
 			"veriler" => $data,
-			"durum" => $durum
+			"durum" => $durum, 
+			"ids" => $ids,
 		]);
 
 	}
 
 }
+
+
+
