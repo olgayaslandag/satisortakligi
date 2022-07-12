@@ -1,6 +1,6 @@
 <h2>What Is Satış Ortaklığı?</h2>
 <p>
-It is a system that works with the special plugin I developed for Woocommerce. It works with the database used for the e-commerce platform. </p>
+It is a system that works with the special plugin I developed for Woocommerce. It works with the database used for the e-commerce platform. Vue is called with cdn and coded with php-vue.</p>
 <p>What can be done with this system:</p>
 <ul>
 <li>To see the sales volumes of the sales partners</li>
